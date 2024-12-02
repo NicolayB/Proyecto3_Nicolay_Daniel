@@ -259,3 +259,38 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 pipeline = Pipeline(steps=[('preprocessor', preprocessor)])
 X_train_transformed = pipeline.fit_transform(X_train)
 X_test_transformed = pipeline.transform(X_test)
+
+
+# Crear y entrenar el modelo de red neuronal
+with mlflow.start_run():
+    # Definir la arquitectura de la red neuronal
+    model = Sequential([
+        Dense(128, input_dim=X_train_transformed.shape[1], activation='relu'),
+        Dropout(0.3),
+        Dense(64, activation='relu'),
+        Dropout(0.3),
+        Dense(32, activation='relu'),
+        Dense(1, activation='linear')  # Predicción continua
+    ])
+    
+    # Compilar el modelo
+    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse', metrics=['mae'])
+    
+    # Entrenar el modelo
+    history = model.fit(X_train_transformed, y_train, 
+                        validation_data=(X_test_transformed, y_test),
+                        epochs=50, batch_size=32, verbose=1)
+    
+    # Evaluar el modelo
+    loss, mae = model.evaluate(X_test_transformed, y_test, verbose=0)
+    print(f"Mean Absolute Error: {mae}")
+    
+    # Registrar con MLflow
+    mlflow.log_param("input_features", list(X.columns))
+    mlflow.log_param("epochs", 50)
+    mlflow.log_param("batch_size", 32)
+    mlflow.log_metric("mae", mae)
+    mlflow.log_metric("loss", loss)
+    mlflow.keras.log_model(model, "model")
+
+    print("Modelo registrado en MLflow.")
