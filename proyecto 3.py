@@ -205,3 +205,57 @@ df2["punt_global"] = data["punt_global"]
 for i in range(0,9,2):
     sns.pairplot(df2, x_vars=df2[df2.columns[[i,i+1]]], y_vars=["punt_global"], height=7, kind="reg", plot_kws={"line_kws": {"color": "red"}})
 plt.show()"""
+
+
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+import mlflow
+import mlflow.keras
+
+# Variables relacionadas con ubicación y características del colegio
+selected_columns = [
+    'cole_area_ubicacion', 
+    'cole_bilingue', 
+    'cole_calendario', 
+    'cole_caracter', 
+    'cole_genero', 
+    'cole_jornada', 
+    'cole_naturaleza', 
+    'punt_global'  # Variable objetivo
+]
+
+# Filtrar la base de datos
+filtered_data = data[selected_columns]
+
+# Manejo de valores nulos
+filtered_data.dropna(inplace=True)
+
+# Separar características y variable objetivo
+X = filtered_data.drop('punt_global', axis=1)
+y = filtered_data['punt_global']
+
+# Preprocesamiento de datos: codificar categóricas y escalar numéricas
+categorical_features = X.select_dtypes(include=['object']).columns
+numerical_features = X.select_dtypes(include=['int64', 'float64']).columns
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', StandardScaler(), numerical_features),
+        ('cat', OneHotEncoder(drop='first'), categorical_features)
+    ]
+)
+
+# Dividir en conjunto de entrenamiento y prueba
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Construir el pipeline
+pipeline = Pipeline(steps=[('preprocessor', preprocessor)])
+X_train_transformed = pipeline.fit_transform(X_train)
+X_test_transformed = pipeline.transform(X_test)
