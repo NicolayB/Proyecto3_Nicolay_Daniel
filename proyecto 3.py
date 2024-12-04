@@ -4,7 +4,26 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Importación de datos
-data = pd.read_csv("C:/Users/Nicolay Barrera/OneDrive - Universidad de los andes/Documentos/Nicolay/Universidad/IIND/analitica computacional/proyectos/proyecto 3/db final saber11.csv")
+#data = pd.read_csv("db final saber11.csv")
+#print(data.head())
+
+# Importación desde AWS
+import pandas.io.sql as sqlio
+import psycopg2
+# Conectarse a la base de datos de AWS
+engine = psycopg2.connect(
+    dbname="bogota",
+    user="postgres",
+    password="actdproyecto3",
+    host="saber11.cmavnazwpcep.us-east-1.rds.amazonaws.com",
+    port='5432'
+)
+cursor = engine.cursor()
+
+query = """
+SELECT *
+FROM datos;"""
+data = sqlio.read_sql_query(query, engine)
 print(data.head())
 
 # Limpieza de datos
